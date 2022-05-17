@@ -1,130 +1,240 @@
-from flask import Flask, request, jsonify
+"""MODULE"""
 import json
-import jwt
-from datetime import timezone
-import datetime
 import os
-from dotenv import load_dotenv
-from JSONExceptionHandler import JSONExceptionHandler
 import socket
-basedir = os.path.abspath(os.path.dirname(__file__))
-load_dotenv(os.path.join(basedir, './.env'))
-
+import requests
+from flask import Flask, request, jsonify
+from JSONExceptionHandler import JSONExceptionHandler
 app = Flask(__name__)
+USER_URL = "http://user:5002"
+TOKEN_URL = "http://token:5003"
 HOST = "0.0.0.0"
-PORT = 5003
-ENV = os.environ.get('FLASK_ENV')
-secret_key = os.environ.get('SECRET_KEY')
-secret_key_refresh = os.environ.get('SECRET_KEY_REFRESH')
-expire_token = os.environ.get('JWT_ACCESS_TOKEN_EXPIRES')
-expired_token_refresh = os.environ.get('JWT_REFRESH_TOKEN_EXPIRES')
-dict_access = {}
+PORT = 5001
+if os.environ.get('FLASK_ENV') == 'dev':
+    # app.logger.info(os.environ.get('FLASK_ENV'))
+    app.config.from_object('config.Development')
+elif os.environ.get('FLASK_ENV') == 'testing':
+    # app.logger.info(os.environ.get('FLASK_ENV'))
+    app.config.from_object('config.Testing')
+else:
+    # app.logger.info(os.environ.get('FLASK_ENV'))
+    app.config.from_object('config.Production')
 @app.route("/",methods=["GET"])
 def home():
-    test=  os.environ.get("FLASK_ENV")
-    return f'TOKEN MODE: {test} SOCKETNAME: {socket.gethostname()}'
+    """_summary_
 
-@app.route("/generate",methods=["POST"])
-def generate():
-    payload = json.loads(request.data)
-    publicid = payload["id"]
-    datauser = {"public_id":publicid}
-    token = createToken(datauser)
-    refresh = createRefreshToken(datauser)
-    checkKey(dict_access,publicid,0)
+    Returns:
+        _type_: _description_
+    """
+    test=  app.config.get("FLASK_ENV")
+    return f'GATEWAY INI ADALAH MODE: {test} SOCKETNAME: {socket.gethostname()}'
+
+@app.route("/initial",methods=["GET"])
+def initial():
+    """_summary_
+
+    Returns:
+        _type_: _description_
+    """
+    response = requests.get(f"{USER_URL}/create")
+    # sent ok response
     return jsonify({
-        "token":token,
-        "token_refresh":refresh
-    })
-
-    
-def createToken(dataUser : object):
-    print("Expired ",expire_token)
-    token = jwt.encode({
-            'id': dataUser['public_id'],
-            'exp' : datetime.datetime.utcnow() + datetime.timedelta(hours = int(expire_token))
-        }, secret_key, algorithm='HS256')
-    return token
-
-def createRefreshToken(dataUser : object):
-    token = jwt.encode({
-            'id': dataUser['public_id'],
-            'exp' : datetime.datetime.utcnow() + datetime.timedelta(days = int(expired_token_refresh))
-        }, secret_key_refresh, algorithm='HS256')
-    return token
-
-@app.route("/validate",methods=["POST"])
-def validate():
-    payload = json.loads(request.data)
-    token = payload["token"]
-    publicid = ''
-    try:
-        expired_at = datetime.datetime.utcnow() + datetime.timedelta(seconds=30)
-        jwt_decoded = jwt.decode(token,secret_key, algorithms=["HS256"])
-        publicid = jwt_decoded["id"]
-        checkKey(dict_access,publicid,0)
-        return jsonify({
-            "id":jwt_decoded["id"]
+        "message":response.json()['message']
         }), 200
-    except Exception as err:
-        ch = checkKey(dict_access,publicid,1)
-        if ch:
-            return jsonify({ "message" : "un-authorized" }), 401
-        else:
-            return jsonify({ "message" : "please re-login un-authorized ..." }), 401
-        #return jsonify({ "message" : "un-authorized" }), 401
 
-@app.route("/refresh",methods=["POST"])
-def validate_refresh():
+
+@app.route("/register",methods=["POST"])
+def register():
+    """_summary_
+
+    Returns:
+        _type_: _description_
+    """
     payload = json.loads(request.data)
-    token = payload["token"]
-    publicid = ''
-    try:
-        jwt_decoded = jwt.decode(token, secret_key_refresh, algorithms=["HS256"])
-        publicid = jwt_decoded["id"]
-        datauser = {'public_id':jwt_decoded["id"]}
-        token = createToken(datauser)
-        refresh = createRefreshToken(datauser)
-        checkKey(dict_access,publicid,0)
+    required_fields = ['first_name', 'last_name',
+            'email', 'username', 'password']
+    #check required field
+    for field in required_fields:
+        if field not in payload:
+        # abort(400, '%s is required' % field)
+            return jsonify({
+                "message":f'{field} is required'
+                }), 400
+    # hit service user
+    data_payload = {
+        "first_name":payload["first_name"],
+        "last_name":payload["last_name"],
+        "email":payload["email"],
+        "username" : payload["username"],
+        "password": payload["password"]
+    }
+    response = requests.post(f"{USER_URL}/register", json=data_payload)
+    # sent error response
+    if response.status_code != 200 :
         return jsonify({
-                "token":token,
-                "token_refresh":refresh
-            }), 200
-    except Exception as err:
-        ch = checkKey(dict_access,publicid,1)
-        if ch:
-            return jsonify({ "message" : "un-authorized" }), 401
-        else:
-            return jsonify({ "message" : "please re-login un-authorized ..." }), 401
+            "message":response.json()['message']
+        }), 400
+    # sent ok response
+    return jsonify({
+        "message":"success",
+        "data": response.json()['data']
+    }), 200
+@app.route("/login",methods=["POST"])
+def login():
+    """_summary_
 
+    Returns:
+        _type_: _description_
+    """
+    payload = json.loads(request.data)
+    # hit service user
+    data_payload = {
+        "username" : payload["username"],
+        "password": payload["password"]
+    }
+    response = None
+    try:
+        response = requests.post(f"{USER_URL}/login", json=data_payload)
+    except requests.exceptions.RequestException as exception:  # This is the correct syntax
+        return jsonify({
+            "message":f"{exception}"
+        }), 400
+    #response = requests.post(f"{user_url}/login", json=data_payload)
+    response_json = response.json()
+    # sent error response
+    if response.status_code != 200 :
+        return jsonify({
+            "message":response_json['message']
+        }), 400
+    data_payload = {
+        "id" : response_json['data']["public_id"]
+    }
+    try:
+        response = requests.post(f"{TOKEN_URL}/generate", json=data_payload)
+    except requests.exceptions.RequestException as exception:  # This is the correct syntax
+        return jsonify({
+            "message":f"{exception}"
+        }), 400
+    response_json = response.json()
+    # sent ok reponse
+    return jsonify({
+        "message":"success",
+        "token":response_json["token"],
+        "token_refresh":response_json["token_refresh"]
+    }), 200
+@app.route("/refresh",methods=["POST"])
+def refresh():
+    """_summary_
 
-def checkKey(dict, id,typ = 0):
-    if id in dict.keys():
-        if dict.get(id) > 2 :
-            print(dict_access.get(id))
-            return False
-        else:
-            count = 0
-            if typ == 0:
-                count = 0
-                dict.update({id:count})
-                print(dict_access.get(id))
-            elif typ > 0:
-                x = dict_access.get(id)
-                count = x+1
-                dict.update({id:count})
-                print(dict_access.get(id))
-            return True
-    else:
-        count = 0
-        dict_access[id] = count+1
-        print(dict_access.get(id))
-        return True
+    Returns:
+        _type_: _description_
+    """
+    payload = json.loads(request.data)
+    # hit service user
+    data_payload = {
+        "token" : payload["token"]
+    }
+    response = None
+    try:
+        response = requests.post(f"{TOKEN_URL}/refresh", json=data_payload)
+    except requests.exceptions.RequestException as exception:  # This is the correct syntax
+        return jsonify({
+            "message":f"{exception}"
+        }), 400
+    response_json = response.json()
+    # sent error response
+    if response.status_code != 200 :
+        return jsonify({
+            "message":response_json['message']
+        }), 401
+    # sent ok reponse
+    return jsonify({
+        "message":"success",
+        "token":response_json["token"],
+        "token_refresh":response_json["token_refresh"]
+    }), 200
+@app.route("/loginagri",methods=["POST"])
+def loginagri():
+    """_summary_
 
+    Returns:
+        _type_: _description_
+    """
+    payload = json.loads(request.data)
+    # hit service user
+    data_payload = {
+        "username" : payload["username"],
+        "password": payload["password"]
+    }
+    response = requests.post(f"{USER_URL}/loginagri", json=data_payload)
+    response_json = response.json()
+    # sent error response
+    if response.status_code != 200 :
+        return jsonify({
+            "message":"Username is not registered please check",
+            "data": {
+                "username":payload["username"]
+            }
+        }), 400
+    data_payload = {
+        "id" : response_json["username"]
+    }
+    response = requests.post(f"{TOKEN_URL}/generate", json=data_payload)
+    response_json = response.json()
+
+    # sent ok reponse
+    return jsonify({
+        "message":"success",
+        "data": {
+            "token":response_json["token"],
+            "expired_at":response_json["expired_at"]
+        }
+    }), 200
+@app.route("/list", methods=["GET"])
+def user_list():
+    """_summary_
+
+    Returns:
+        _type_: _description_
+    """
+    auth = None
+    if 'Authorization' in request.headers:
+        auth = request.headers['Authorization']
+    if not auth:
+        return jsonify({
+            "message":"Token is missing !!"
+        }), 401
+    auth = request.headers['Authorization'].split(' ')
+    token = auth[1]
+    # hit validate token
+    data_payload = {
+        "token" : token
+    }
+    response = None
+    try:
+        response = requests.post(f"{TOKEN_URL}/validate", json=data_payload)
+    except requests.exceptions.RequestException as exception:  # This is the correct syntax
+        return jsonify({
+            "message":f"{exception}"
+        }), 400
+    if response.status_code == 401 :
+        return jsonify({
+            "message":"please re-login un-authorized"
+        }), 401
+    # hit get list users
+    try:
+        response = requests.get(f"{USER_URL}/list")
+    except requests.exceptions.RequestException as exception:  # This is the correct syntax
+        return jsonify({
+            "message":f"{exception}"
+        }), 400
+    response_json = response.json()
+
+    return jsonify({
+        "message":"success",
+        "data" : response_json["data"]
+    }), 200
 if __name__ == "__main__":
     JSONExceptionHandler(app)
-    if ENV =='development':
-        app.run(host=HOST, port=PORT, debug=1)
-    else:
-        app.run(host=HOST, port=PORT, debug=0)
-        
+    app.run(host=HOST, port=PORT)
+    

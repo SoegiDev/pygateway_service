@@ -1,0 +1,11 @@
+### register
+POST http://127.0.0.1:5001/register
+Content-Type: application/json
+
+{
+    "first_name":"eva",
+    "last_name":"yulianti",
+    "email":"eva@gmail.com",
+    "username":"eva",
+    "password":"fajarsoegi"
+}

@@ -1,7 +1,0 @@
-### generate
-POST http://127.0.0.1:5002/generate
-Content-Type: application/json
-
-{
-    "id":"0b799082-1bbe-4a86-96d3-978f5550219f"
-}

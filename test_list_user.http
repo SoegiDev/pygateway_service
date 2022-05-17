@@ -1,0 +1,4 @@
+### register
+GET http://127.0.0.1:5001/list
+Content-Type: application/json
+Authorization: Token eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjQ5NDQ4MGY0LTU2ZjMtNDYxZC05ZWE2LTFjZjA2MWVlMzM1ZCIsImV4cCI6MTY1MTk4NTc4Mn0.dvJjHP7F6g3t_xLGF3_cWYOUPKy0wnm3DxeZpcdsCw8

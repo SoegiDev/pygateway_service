@@ -1,7 +1,0 @@
-### generate
-POST http://127.0.0.1:5002/validate
-Content-Type: application/json
-
-{
-    "token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjBiNzk5MDgyLTFiYmUtNGE4Ni05NmQzLTk3OGY1NTUwMjE5ZiIsImV4cCI6MTY1MTMxNjIzMH0.wp9_3tydeJlP8FwrgsiXjUHJGlH9xHyRvqIYxVYviiM"
-}

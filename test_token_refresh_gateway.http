@@ -1,0 +1,7 @@
+### register
+POST http://127.0.0.1:5001/refresh
+Content-Type: application/json
+
+{
+    "token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjQ5NDQ4MGY0LTU2ZjMtNDYxZC05ZWE2LTFjZjA2MWVlMzM1ZCIsImV4cCI6MTY1NDU3NDMxMH0.BpgJ2Q6QZPmD46fjUvYoEt6Wbu_C2ZGQK8q_vF17v0M"
+}
