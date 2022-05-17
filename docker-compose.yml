@@ -1,7 +1,7 @@
 version: "3.9"
 services:
-  token:
-    container_name: pytoken_service
+  gateway:
+    container_name: pygateway_service
     build:
       context: .
       dockerfile: Dockerfile
