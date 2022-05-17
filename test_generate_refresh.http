@@ -1,0 +1,7 @@
+### generate
+POST http://127.0.0.1:5002/refresh
+Content-Type: application/json
+
+{
+    "token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjBiNzk5MDgyLTFiYmUtNGE4Ni05NmQzLTk3OGY1NTUwMjE5ZiIsImV4cCI6MTY1MDAzNjAyN30.kzwwk341NIHXquaqdGcv3S_yVFaNaA_NS4wi9a2FbeI"
+}
