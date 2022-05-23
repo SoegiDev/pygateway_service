@@ -4,21 +4,29 @@ import os
 import socket
 import requests
 from flask import Flask, request, jsonify
+import response
 from JSONExceptionHandler import JSONExceptionHandler
 app = Flask(__name__)
-USER_URL = "http://user:5002"
-TOKEN_URL = "http://token:5003"
+USER_URL = None
+TOKEN_URL = None
 HOST = "0.0.0.0"
 PORT = 5001
-if os.environ.get('FLASK_ENV') == 'dev':
+if os.environ.get('FLASK_ENV') == 'development':
     # app.logger.info(os.environ.get('FLASK_ENV'))
     app.config.from_object('config.Development')
+    USER_URL = "http://localhost:5002"
+    TOKEN_URL = "http://localhost:5003"
+    print("Dev")
 elif os.environ.get('FLASK_ENV') == 'testing':
     # app.logger.info(os.environ.get('FLASK_ENV'))
     app.config.from_object('config.Testing')
+    USER_URL = "http://localhost:5002"
+    TOKEN_URL = "http://localhost:5003"
 else:
     # app.logger.info(os.environ.get('FLASK_ENV'))
     app.config.from_object('config.Production')
+    USER_URL = "http://user:5002"
+    TOKEN_URL = "http://token:5003"
 @app.route("/",methods=["GET"])
 def home():
     """_summary_
@@ -81,6 +89,7 @@ def register():
     }), 200
 @app.route("/login",methods=["POST"])
 def login():
+    result = dict()
     """_summary_
 
     Returns:
