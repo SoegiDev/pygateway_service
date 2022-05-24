@@ -4,7 +4,6 @@ import os
 import socket
 import requests
 from flask import Flask, request, jsonify
-import response
 from JSONExceptionHandler import JSONExceptionHandler
 app = Flask(__name__)
 USER_URL = None
@@ -89,7 +88,6 @@ def register():
     }), 200
 @app.route("/login",methods=["POST"])
 def login():
-    result = dict()
     """_summary_
 
     Returns:
