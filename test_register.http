@@ -1,5 +1,5 @@
 ### register
-POST http://127.0.0.1:5001/register
+POST http://127.0.0.1:5001/v1/register
 Content-Type: application/json
 
 {
