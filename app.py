@@ -1,5 +1,6 @@
 """MODULE"""
 import os
+<<<<<<< HEAD
 from flask import Flask
 from route import v1
 def create_app():
@@ -23,4 +24,3 @@ def create_app():
         # Register Blueprints
         app.register_blueprint(v1)
         return app
-    
